@@ -1,13 +1,18 @@
 import React from "react";
-import { MessageSquare } from "lucide-react";
+import { Send, MessageSquare } from "lucide-react";
 import { EmptyState } from "../ui/EmptyState.jsx";
 
-export function MessagePanel({ messages }) {
+export function MessagePanel({ messages, onSendHotSms, sendingSms }) {
   return (
     <div className="panel">
       <div className="panel-title">
-        <h2>Message logs</h2>
-        <span>Development provider logs</span>
+        <div>
+          <h2>Message logs</h2>
+          <span>Development provider logs</span>
+        </div>
+        <button className="inline-action" onClick={onSendHotSms} disabled={sendingSms}>
+          <Send size={16} /> {sendingSms ? "Sending" : "Send SMS to hot leads"}
+        </button>
       </div>
       {messages.length ? messages.map((message) => (
         <div className="message-row" key={message.id}>

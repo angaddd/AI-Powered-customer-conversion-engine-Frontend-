@@ -5,6 +5,8 @@ import { request } from "../../lib/api.js";
 export function RegisterScreen({ onLogin, onShowLogin }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [domain, setDomain] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +19,14 @@ export function RegisterScreen({ onLogin, onShowLogin }) {
     try {
       await request("/auth/register/", "", {
         method: "POST",
-        body: JSON.stringify({ username, email, password, password2 })
+        body: JSON.stringify({
+          username,
+          email,
+          company_name: companyName,
+          domain,
+          password,
+          password2
+        })
       });
       const auth = await request("/auth/login/", "", {
         method: "POST",
@@ -47,6 +56,14 @@ export function RegisterScreen({ onLogin, onShowLogin }) {
           <label>
             Email
             <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="john@example.com" autoComplete="email" required />
+          </label>
+          <label>
+            Company
+            <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Northstar Studio" autoComplete="organization" />
+          </label>
+          <label>
+            Website domain
+            <input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="example.com" />
           </label>
           <label>
             Password

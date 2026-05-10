@@ -12,7 +12,11 @@ export function LeadPanel({ leads, full = false }) {
         <div className="lead-row" key={lead.id}>
           <div>
             <strong>{lead.name || lead.email || lead.visitor_id}</strong>
-            <span>{lead.intent_category.replaceAll("_", " ")}</span>
+            <span>
+              {lead.intent_category.replaceAll("_", " ")}
+              {lead.email ? ` | ${lead.email}` : ""}
+              {lead.phone ? ` | ${lead.phone}` : ""}
+            </span>
           </div>
           <meter min="0" max="150" value={lead.intent_score}></meter>
           <b>{lead.intent_score}</b>

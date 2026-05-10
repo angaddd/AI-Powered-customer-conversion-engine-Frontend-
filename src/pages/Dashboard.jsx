@@ -3,6 +3,8 @@ import {
   Activity,
   BarChart3,
   Bot,
+  Clipboard,
+  KeyRound,
   LogOut,
   Mail,
   RefreshCw,
@@ -27,7 +29,7 @@ import { LeadPanel } from "../components/panels/LeadPanel.jsx";
 import { EventPanel } from "../components/panels/EventPanel.jsx";
 import { AutomationPanel } from "../components/panels/AutomationPanel.jsx";
 import { MessagePanel } from "../components/panels/MessagePanel.jsx";
-import { request, normalizeList } from "../lib/api.js";
+import { API_ORIGIN, request, normalizeList } from "../lib/api.js";
 
 const emptyOverview = {
   total_visitors: 0,
@@ -53,6 +55,10 @@ export default function Dashboard({ token, onLogout }) {
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sendingSms, setSendingSms] = useState(false);
+
+  const trackingScriptUrl = me?.company?.public_key ? `${API_ORIGIN}/api/tracker/${me.company.public_key}.js` : "";
+  const installSnippet = trackingScriptUrl ? `<script defer src="${trackingScriptUrl}"></script>` : "";
 
   async function refresh() {
     setLoading(true);
@@ -106,6 +112,25 @@ export default function Dashboard({ token, onLogout }) {
     return () => window.clearInterval(timer);
   }, [token]);
 
+  async function copySnippet() {
+    if (!installSnippet) return;
+    await navigator.clipboard.writeText(installSnippet);
+  }
+
+  async function sendHotSms() {
+    setSendingSms(true);
+    setError("");
+    try {
+      const result = await request("/message-logs/send-hot-sms/", token, { method: "POST" });
+      await refresh();
+      setError(result.sent ? "" : "No hot leads with phone numbers are ready for SMS yet.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingSms(false);
+    }
+  }
+
   const bestLeads = useMemo(
     () => [...leads].sort((a, b) => b.intent_score - a.intent_score).slice(0, 8),
     [leads]
@@ -120,6 +145,7 @@ export default function Dashboard({ token, onLogout }) {
           <button className={activeView === "leads" ? "active" : ""} onClick={() => setActiveView("leads")}><Users size={18} /> Leads</button>
           <button className={activeView === "automations" ? "active" : ""} onClick={() => setActiveView("automations")}><Zap size={18} /> Automations</button>
           <button className={activeView === "messages" ? "active" : ""} onClick={() => setActiveView("messages")}><Mail size={18} /> Email & SMS</button>
+          <button className={activeView === "profile" ? "active" : ""} onClick={() => setActiveView("profile")}><KeyRound size={18} /> Profile</button>
         </nav>
         <div className="tenant-box">
           <span>{me?.company?.name || "Tenant"}</span>
@@ -210,7 +236,33 @@ export default function Dashboard({ token, onLogout }) {
 
         {activeView === "leads" && <LeadPanel leads={leads} full />}
         {activeView === "automations" && <AutomationPanel automations={automations} insights={insights} />}
-        {activeView === "messages" && <MessagePanel messages={messages} />}
+        {activeView === "messages" && <MessagePanel messages={messages} onSendHotSms={sendHotSms} sendingSms={sendingSms} />}
+        {activeView === "profile" && (
+          <section className="panel install-panel">
+            <div className="panel-title">
+              <div>
+                <h2>Tracking install</h2>
+                <span>Use this script on your client website</span>
+              </div>
+              <button className="inline-action" onClick={copySnippet}><Clipboard size={16} /> Copy</button>
+            </div>
+            <div className="install-grid">
+              <label>
+                Company
+                <input readOnly value={me?.company?.name || ""} />
+              </label>
+              <label>
+                Public key
+                <input readOnly value={me?.company?.public_key || ""} />
+              </label>
+              <label>
+                Script link
+                <input readOnly value={trackingScriptUrl} />
+              </label>
+            </div>
+            <pre>{installSnippet}</pre>
+          </section>
+        )}
       </main>
     </div>
   );
